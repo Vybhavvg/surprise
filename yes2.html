@@ -22,17 +22,13 @@
     <img class="full-photo" src="./pr.jpg" alt="Photo" />
     <h1>CUTEEE</h1>
     <p id="sync-lyric" class="sync-lyric">Pogadanivvu kasepu...🤭</p>
-    <div class="btn" id="skip-wrap">
-      <a href="final.html">Skip</a>
-    </div>
-    <div class="btn" id="next-wrap" style="display: none;">
-      <a href="final.html">Next</a>
+    <div class="btn">
+      <a id="action-link" href="final.html">Skip</a>
     </div>
   </div>
   <script>
     const audio = document.getElementById("yes2-audio");
-    const skipWrap = document.getElementById("skip-wrap");
-    const nextWrap = document.getElementById("next-wrap");
+    const actionLink = document.getElementById("action-link");
     const lyricEl = document.getElementById("sync-lyric");
     const defaultLyric = "Pogadanivvu kasepu...";
     const startDelayMs = 1500;
@@ -163,8 +159,7 @@
         clearTimeout(startTimeoutId);
         startTimeoutId = null;
       }
-      skipWrap.style.display = "none";
-      nextWrap.style.display = "flex";
+      actionLink.textContent = "Next";
     });
   </script>
 </body>
