@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thank You</title>
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="yes2-page">
+  <img class="top-left-light" src="https://cdn.pixabay.com/animation/2025/12/23/03/04/03-04-08-302_512.gif" alt="" aria-hidden="true" />
+  <img class="top-right-light" src="https://cdn.pixabay.com/animation/2025/12/23/03/04/03-04-08-302_512.gif" alt="" aria-hidden="true" />
+  <audio id="yes2-audio" class="yes2-audio" preload="auto">
+    <source src="./aud1.mpeg" type="audio/mpeg" />
+  </audio>
+  <div class="music-bars" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="container">
+    <img class="full-photo" src="./pr.jpg" alt="Photo" />
+    <h1>CUTEEE</h1>
+    <p id="sync-lyric" class="sync-lyric">Pogadanivvu kasepu...🤭</p>
+    <div class="btn">
+      <a href="final.html">Skip</a>
+    </div>
+    <div class="btn" id="next-wrap" style="display: none;">
+      <a href="final.html">Next</a>
+    </div>
+  </div>
+  <script>
+    const audio = document.getElementById("yes2-audio");
+    const nextWrap = document.getElementById("next-wrap");
+    const lyricEl = document.getElementById("sync-lyric");
+    const defaultLyric = "Pogadanivvu kasepu...";
+    const startDelayMs = 1500;
+    let activeCueIndex = -1;
+    let rafId = null;
+    let startScheduled = false;
+    let startTimeoutId = null;
+
+    const lyricCues = [
+      { text: "Athiloka Sundaree", duration: 2.1 },
+      { text: "Athiloka Sundaree,", duration: 2.1 },
+      { text: "Tholichoopuke Ilaa Mathipoyene Mari", duration: 2.1 },
+      { text: "Unna Okka Opiri", duration: 2.1 },
+      { text: "Gullo Ganta Maadiri,", duration: 2.1 },
+      { text: "Kottukunnade,", duration: 2.1 },
+      { text: "Katthulaa Katuka Kalla Avi,", duration: 2.1 },
+      { text: "Lippulaa Strawberry Pallaa Avi,", duration: 2.8 },
+      { text: "Andame Ninu Choosi Fidaa Ayi,", duration: 2.8 },
+      { text: "Neetho Photo Digi Atograafuku", duration: 2.8 },
+      { text: "Waiting Chesthaa Untade", duration: 2.8 }
+    ];
+
+    function getCueAtTime(timeSec) {
+      let elapsed = 0;
+      for (let i = 0; i < lyricCues.length; i++) {
+        const start = elapsed;
+        const end = start + lyricCues[i].duration;
+        if (timeSec >= start && timeSec < end) {
+          return { index: i, start, end, cue: lyricCues[i] };
+        }
+        elapsed = end;
+      }
+      return null;
+    }
+
+    function tryPlayAudio() {
+      audio.play().catch(() => {
+        // Autoplay can be blocked by browser policy until user interaction.
+      });
+    }
+
+    function scheduleStart() {
+      if (startScheduled) return;
+      startScheduled = true;
+      startTimeoutId = setTimeout(tryPlayAudio, startDelayMs);
+    }
+
+    function hideLyrics() {
+      lyricEl.textContent = defaultLyric;
+      lyricEl.style.opacity = "1";
+    }
+
+    function renderTimedLyrics() {
+      const t = audio.currentTime;
+      const cueInfo = getCueAtTime(t);
+      const lastIndex = lyricCues.length - 1;
+
+      if (!cueInfo && t < 0) {
+        activeCueIndex = -1;
+        lyricEl.style.opacity = "0";
+        return;
+      }
+
+      if (!cueInfo) {
+        if (activeCueIndex !== lastIndex) {
+          activeCueIndex = lastIndex;
+          lyricEl.textContent = lyricCues[lastIndex].text;
+        }
+        lyricEl.style.opacity = "1";
+        return;
+      }
+
+      const { index: cueIndex, start, end, cue } = cueInfo;
+      if (cueIndex !== activeCueIndex) {
+        activeCueIndex = cueIndex;
+        lyricEl.textContent = cue.text;
+      }
+
+      if (cueIndex === lastIndex) {
+        lyricEl.style.opacity = "1";
+        return;
+      }
+
+      const progress = (t - start) / (end - start);
+      let opacity = 1;
+      const fadeWindow = 0.6;
+      if (progress > 1 - fadeWindow) {
+        const x = (1 - progress) / fadeWindow;
+        opacity = 0.5 - 0.5 * Math.cos(Math.PI * x);
+      }
+      lyricEl.style.opacity = Math.max(0, Math.min(1, opacity)).toFixed(3);
+    }
+
+    function tickLyrics() {
+      renderTimedLyrics();
+      if (!audio.paused && !audio.ended) {
+        rafId = requestAnimationFrame(tickLyrics);
+      } else {
+        rafId = null;
+      }
+    }
+
+    window.addEventListener("load", scheduleStart);
+    document.addEventListener("pointerdown", scheduleStart, { once: true });
+    document.addEventListener("keydown", scheduleStart, { once: true });
+    audio.addEventListener("seeked", renderTimedLyrics);
+    audio.addEventListener("seeking", renderTimedLyrics);
+
+    audio.addEventListener("play", () => {
+      if (!rafId) rafId = requestAnimationFrame(tickLyrics);
+    });
+
+    audio.addEventListener("pause", () => {
+      hideLyrics();
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    });
+
+    audio.addEventListener("ended", () => {
+      hideLyrics();
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (startTimeoutId) {
+        clearTimeout(startTimeoutId);
+        startTimeoutId = null;
+      }
+      nextWrap.style.display = "flex";
+    });
+  </script>
+</body>
+
+</html>
